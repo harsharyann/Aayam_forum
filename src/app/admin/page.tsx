@@ -15,8 +15,12 @@ interface Member {
   isVerified: boolean;
   whatsappJoined?: boolean;
   gspaceJoined?: boolean;
-  timestamp: string;
-  [key: string]: string | boolean | string[] | undefined; // Allow dynamic fields for toggle
+  interests?: string[];
+  experience?: string;
+  expDetail?: string;
+  motivation?: string;
+  specialSkills?: string;
+  created_at?: string;
 }
 
 export default function Admin() {
@@ -125,7 +129,7 @@ export default function Admin() {
       (r.fullName?.toLowerCase() || "").includes(s) || 
       (r.email?.toLowerCase() || "").includes(s) ||
       (r.whatsapp || "").includes(s)
-    ).sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+    ).sort((a, b) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime());
   }, [registrations, search, activeTab]);
 
   const exportCSV = () => {
@@ -134,7 +138,7 @@ export default function Admin() {
     const headers = ["Name", "Email", "WhatsApp", "House", "Year", "Interests", "Experience"];
     const rows = dataToExport.map(m => [
       m.fullName, m.email, m.whatsapp, m.house, m.year, 
-      (m.interests || []).join(", "), m.experience
+      (m.interests as string[] || []).join(", "), m.experience
     ]);
     const csvContent = [headers, ...rows].map(e => e.map(v => `"${v}"`).join(",")).join("\n");
     const blob = new Blob([csvContent], { type: "text/csv" });
@@ -308,7 +312,7 @@ export default function Admin() {
                     const email = (document.getElementById('m_email') as HTMLInputElement).value;
                     const whatsapp = (document.getElementById('m_whatsapp') as HTMLInputElement).value;
                     const house = (document.getElementById('m_house') as HTMLInputElement).value;
-                    const m = isAdding ? { fullName: name, email, whatsapp, house, year: 'Foundation', interests: [], experience: 'No', expDetail: '', motivation: '', specialSkills: '', whatsappJoined: false, gspaceJoined: false } : { ...editingMember, fullName: name, email, whatsapp, house };
+                    const m = isAdding ? { id: '', isVerified: true, fullName: name, email, whatsapp, house, year: 'Foundation', interests: [], experience: 'No', expDetail: '', motivation: '', specialSkills: '', whatsappJoined: false, gspaceJoined: false } as Member : { ...editingMember, fullName: name, email, whatsapp, house } as Member;
                     handleUpdate(m);
                   }} className="primary-button w-full shadow-[0_10px_40px_rgba(90,15,28,0.4)]">{isAdding ? "Inscribe to Archives" : "Apply Modifications"}</button>
                </div>
