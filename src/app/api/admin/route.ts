@@ -52,7 +52,8 @@ export async function POST(req: Request) {
 
     if (action === "toggleField" && id && field) {
       const { data: current } = await supabase.from("registrations").select(field).eq("id", id).single();
-      await supabase.from("registrations").update({ [field]: !current[field] }).eq("id", id);
+      if (!current) return NextResponse.json({ error: "Not found" }, { status: 404 });
+      await supabase.from("registrations").update({ [field]: !(current as any)[field] }).eq("id", id);
       return NextResponse.json({ success: true });
     }
 
