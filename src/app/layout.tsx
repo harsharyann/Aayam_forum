@@ -14,8 +14,8 @@ const poppins = Poppins({
 });
 
 export const metadata: Metadata = {
-  title: "AAYAM | IITM BS Drama Society",
-  description: "Official registration portal for AAYAM - Enacting Dimensions.",
+  title: "Aayam Form",
+  description: "Official registration portal for AAYAM Drama Society.",
   icons: {
     icon: [
       { url: "/logo.png" },

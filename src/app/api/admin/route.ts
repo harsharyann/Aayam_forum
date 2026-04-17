@@ -1,12 +1,12 @@
 import { NextResponse } from "next/server";
 import { supabase } from "@/lib/supabase";
 
-const ADMIN_PASSWORD = "AayamAdmin2026";
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "AayamAdmin2026";
 
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { password, action, id, field, settings, member } = body;
+    const { password, action, id, field, settings, member, members } = body;
 
     const fetchSettings = async () => {
       const { data } = await supabase.from("settings").select("*").eq("key", "config").single();
@@ -40,8 +40,14 @@ export async function POST(req: Request) {
     }
 
     if (action === "add" && member) {
-      member.isVerified = true;
+      member.isVerified = typeof member.isVerified === 'boolean' ? member.isVerified : true;
       await supabase.from("registrations").insert([member]);
+      return NextResponse.json({ success: true });
+    }
+
+    if (action === "bulkAdd" && Array.isArray(members)) {
+      // Bulk insert members
+      await supabase.from("registrations").insert(members);
       return NextResponse.json({ success: true });
     }
 
@@ -59,6 +65,13 @@ export async function POST(req: Request) {
 
     if (action === "delete" && id) {
       await supabase.from("registrations").delete().eq("id", id);
+      return NextResponse.json({ success: true });
+    }
+
+    if (action === "deleteAll") {
+      // For Supabase, to delete all records without a where clause (if permitted by RLS)
+      // or using a match all filter.
+      await supabase.from("registrations").delete().neq("id", "00000000-0000-0000-0000-000000000000"); // Match all UUIDs
       return NextResponse.json({ success: true });
     }
 

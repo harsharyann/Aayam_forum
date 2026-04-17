@@ -46,6 +46,6 @@ export async function POST(req: Request) {
     return NextResponse.json({ success: true });
   } catch (err) {
     console.error("Registration error:", err);
-    return NextResponse.json({ error: "Database error" }, { status: 500 });
+    return NextResponse.json({ error: err instanceof Error ? err.message : "Database error" }, { status: 500 });
   }
 }

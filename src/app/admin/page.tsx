@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo } from "react";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
-import { Plus, Search, LogOut, CheckCircle, Trash2, Edit2, Users, History, RefreshCw, X } from "lucide-react";
+import { Plus, Search, LogOut, CheckCircle, Trash2, Edit2, Users, History, RefreshCw, X, Download, Upload } from "lucide-react";
 
 interface Member {
   id: string;
@@ -34,13 +34,27 @@ export default function Admin() {
   const [isAdding, setIsAdding] = useState(false);
   const [activeTab, setActiveTab] = useState<"pending" | "verified">("pending");
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (password === "AayamAdmin2026") {
-      setIsAuth(true);
-      fetchData();
-    } else {
-      alert("Invalid Access Key");
+    setLoading(true);
+    try {
+      const res = await fetch("/api/admin", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ password, action: "fetch" }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setRegistrations(data.registrations || []);
+        setSettings(data.settings || { whatsappLink: "" });
+        setIsAuth(true);
+      } else {
+        alert("Invalid Access Key or Unauthorized");
+      }
+    } catch (err) {
+      alert("Connection failed");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -149,6 +163,94 @@ export default function Admin() {
     link.click();
   };
 
+  const exportAllCSV = () => {
+    if (registrations.length === 0) return;
+    const headers = ["Name", "Email", "WhatsApp", "House", "Year", "IsVerified", "Interests", "Experience", "Created At"];
+    const rows = registrations.map(m => [
+      m.fullName, m.email, m.whatsapp, m.house, m.year, m.isVerified,
+      (m.interests as string[] || []).join(", "), m.experience, m.created_at
+    ]);
+    const csvContent = [headers, ...rows].map(e => e.map(v => `"${v}"`).join(",")).join("\n");
+    const blob = new Blob([csvContent], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `aayam_full_registry_${new Date().toISOString().split('T')[0]}.csv`;
+    link.click();
+  };
+
+  const importCSV = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = async (event) => {
+      const text = event.target?.result as string;
+      const lines = text.split("\n");
+      const headers = lines[0].split(",").map(h => h.trim().replace(/"/g, ''));
+      
+      const membersToImport = lines.slice(1).filter(line => line.trim()).map(line => {
+        const values = line.split(",").map(v => v.trim().replace(/"/g, ''));
+        const member: any = {};
+        headers.forEach((header, index) => {
+          if (header === "Name") member.fullName = values[index];
+          else if (header === "Email") member.email = values[index];
+          else if (header === "WhatsApp") member.whatsapp = values[index];
+          else if (header === "House") member.house = values[index];
+          else if (header === "Year") member.year = values[index];
+          else if (header === "IsVerified") member.isVerified = values[index] === "true";
+          else if (header === "Interests") member.interests = values[index] ? values[index].split(", ") : [];
+          else if (header === "Experience") member.experience = values[index];
+        });
+        
+        // Fill defaults if missing
+        member.isVerified = member.isVerified ?? true;
+        member.year = member.year || "Foundation";
+        return member;
+      });
+
+      if (confirm(`Import ${membersToImport.length} members?`)) {
+        setLoading(true);
+        try {
+          const res = await fetch("/api/admin", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ password, action: "bulkAdd", members: membersToImport }),
+          });
+          if (res.ok) {
+            alert("Archive updated with new members.");
+            fetchData();
+          }
+        } finally {
+          setLoading(false);
+        }
+      }
+    };
+    reader.readAsText(file);
+    // Reset input
+    e.target.value = "";
+  };
+
+  const handleDeleteAll = async () => {
+    if (!confirm("CRITICAL ACTION: This will permanently purge the entire registry. Are you absolutely certain?")) return;
+    if (!confirm("Final Confirmation: All data will be lost. Proceed?")) return;
+    
+    setLoading(true);
+    try {
+      const res = await fetch("/api/admin", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ password, action: "deleteAll" }),
+      });
+      if (res.ok) {
+        alert("Registry purged successfully.");
+        fetchData();
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
   if (!isAuth) {
     return (
       <main className="min-h-screen flex items-center justify-center p-6 relative overflow-hidden">
@@ -181,8 +283,16 @@ export default function Admin() {
               <p className="helper-text tracking-[0.4em] uppercase text-white/40">Member Registry Management</p>
             </div>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3">
             <button onClick={() => setIsAdding(true)} className="primary-button !py-3 !px-6 !text-sm flex items-center gap-2"><Plus size={18} /> New Entry</button>
+            <div className="flex items-center gap-2 h-12 px-2 rounded-xl bg-white/5 border border-white/10">
+               <button onClick={exportAllCSV} className="p-2.5 text-white/40 hover:text-[#d4af37] transition-all" title="Export All Data"><Download size={20} /></button>
+               <label className="p-2.5 text-white/40 hover:text-emerald-400 cursor-pointer transition-all" title="Import CSV Data">
+                  <Upload size={20} />
+                  <input type="file" accept=".csv" onChange={importCSV} className="hidden" />
+               </label>
+               <button onClick={handleDeleteAll} className="p-2.5 text-white/10 hover:text-red-500 transition-all" title="Purge Registry"><Trash2 size={20} /></button>
+            </div>
             <button onClick={() => setIsAuth(false)} className="h-12 w-12 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-red-400 hover:bg-red-500/10 transition-all"><LogOut size={20} /></button>
           </div>
         </header>

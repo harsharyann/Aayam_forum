@@ -158,7 +158,7 @@ export default function Home() {
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 1, ease: "easeOut" }}
         >
-          <h1 className="text-5xl md:text-7xl font-playfair text-[#d4af37] mb-4 tracking-tight drop-shadow-[0_4px_20px_rgba(0,0,0,0.8)]" style={{ fontFamily: 'var(--font-playfair)' }}>Aayam Drama Society</h1>
+          <h1 className="text-5xl md:text-7xl font-playfair text-[#d4af37] mb-4 tracking-tight drop-shadow-[0_4px_20px_rgba(0,0,0,0.8)]" style={{ fontFamily: 'var(--font-playfair)' }}>Aayam Form</h1>
           <h2 className="text-lg md:text-xl font-light tracking-[0.6em] text-white/40 uppercase">Enacting Dimensions</h2>
           <div className="h-px bg-gradient-to-r from-transparent via-[#d4af37] to-transparent max-w-lg mx-auto mt-10 opacity-20" />
         </motion.div>
