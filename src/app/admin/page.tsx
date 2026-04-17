@@ -3,16 +3,30 @@
 import { useState, useEffect, useMemo } from "react";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
-import { Plus, Search, LogOut, ChevronRight, CheckCircle, XCircle, Trash2, Edit2, LayoutGrid, Users, History, Download, RefreshCw, X } from "lucide-react";
+import { Plus, Search, LogOut, CheckCircle, Trash2, Edit2, Users, History, RefreshCw, X } from "lucide-react";
+
+interface Member {
+  id: string;
+  fullName: string;
+  email: string;
+  whatsapp: string;
+  house: string;
+  year: string;
+  isVerified: boolean;
+  whatsappJoined?: boolean;
+  gspaceJoined?: boolean;
+  timestamp: string;
+  [key: string]: string | boolean | string[] | undefined; // Allow dynamic fields for toggle
+}
 
 export default function Admin() {
   const [password, setPassword] = useState("");
   const [isAuth, setIsAuth] = useState(false);
-  const [registrations, setRegistrations] = useState<any[]>([]);
+  const [registrations, setRegistrations] = useState<Member[]>([]);
   const [settings, setSettings] = useState({ whatsappLink: "" });
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState("");
-  const [editingMember, setEditingMember] = useState<any | null>(null);
+  const [editingMember, setEditingMember] = useState<Member | null>(null);
   const [isAdding, setIsAdding] = useState(false);
   const [activeTab, setActiveTab] = useState<"pending" | "verified">("pending");
 
@@ -83,7 +97,7 @@ export default function Admin() {
     if (res.ok) fetchData();
   };
 
-  const handleUpdate = async (member: any) => {
+  const handleUpdate = async (member: Member) => {
     const action = isAdding ? "add" : "update";
     const res = await fetch("/api/admin", {
       method: "POST",

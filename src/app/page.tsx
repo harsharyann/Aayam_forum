@@ -291,7 +291,7 @@ export default function Home() {
                     <button 
                       key={v}
                       type="button"
-                      onClick={() => setFormData({...formData, experience: v as any})}
+                      onClick={() => setFormData({...formData, experience: v})}
                       className={`interest-chip flex-1 py-4 ${formData.experience === v ? 'selected' : ''}`}
                     >
                       {v}
